@@ -1,0 +1,4 @@
+gdal>=2.2.0
+numpy>=1.10.0
+
+python-dateutil==2.8.0

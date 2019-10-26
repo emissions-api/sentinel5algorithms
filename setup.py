@@ -19,7 +19,7 @@ setup(
     url='https://github.com/emissions-api/sentinel5algorithms',
     packages=find_packages(),
     classifiers=[
-        'Development Status :: 3 - Alpa',
+        'Development Status :: 3 - Alpha',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
         'Programming Language :: Python :: 3',

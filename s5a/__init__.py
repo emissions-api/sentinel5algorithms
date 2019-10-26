@@ -60,6 +60,7 @@ class Scan():
     """Object to hold arrays from an nc file.
     """
     def __init__(self, filepath):
+        self.filepath = filepath
         self.raw_data = RawData(filepath)
         self.time_reference = dateutil.parser.parse(
             self.raw_data.meta_data.get('NC_GLOBAL#time_reference') or

@@ -71,10 +71,10 @@ class Scan():
                 timestamp = self.time_reference + relativedelta(
                     microseconds=1e3*self.raw_data.deltatime[0, i])
                 self.points.append(Point(
-                    longitude=self.raw_data.longitude[i, j],
-                    latitude=self.raw_data.latitude[i, j],
-                    value=self.raw_data.data[i, j],
-                    quality=self.raw_data.quality[i, j],
+                    longitude=float(self.raw_data.longitude[i, j]),
+                    latitude=float(self.raw_data.latitude[i, j]),
+                    value=float(self.raw_data.data[i, j]),
+                    quality=float(self.raw_data.quality[i, j]),
                     timestamp=timestamp,
                 ))
 

@@ -6,9 +6,8 @@
 """
 import logging
 
-import dateutil.parser
-from dateutil.relativedelta import relativedelta
-import gdal
+import netCDF4
+from datetime import timedelta, datetime
 
 # Logger
 logger = logging.getLogger(__name__)
@@ -17,27 +16,18 @@ logger = logging.getLogger(__name__)
 class RawData():
     """Object to hold the raw data from the nc file.
     """
-    # Specify the layer name to read
-    LAYER_NAME = '//PRODUCT/carbonmonoxide_total_column'
-    LONGITUDE_NAME = '//PRODUCT/longitude'
-    LATITUDE_NAME = '//PRODUCT/latitude'
-    QA_VALUE_NAME = '//PRODUCT/qa_value'
-    DELTA_TIME_NAME = '//PRODUCT/delta_time'
 
     def __init__(self, ncfile):
-        # Get data, longitude, latitude and quality from nc file and
-        # create flattened numpy array from data
-        self.data = gdal.Open(
-            f'HDF5:{ncfile}:{RawData.LAYER_NAME}').ReadAsArray()
-        self.longitude = gdal.Open(
-            f'HDF5:{ncfile}:{RawData.LONGITUDE_NAME}').ReadAsArray()
-        self.latitude = gdal.Open(
-            f'HDF5:{ncfile}:{RawData.LATITUDE_NAME}').ReadAsArray()
-        self.quality = gdal.Open(
-            f'HDF5:{ncfile}:{RawData.QA_VALUE_NAME}').ReadAsArray()
-        self.deltatime = gdal.Open(
-            f'HDF5:{ncfile}:{RawData.DELTA_TIME_NAME}').ReadAsArray()
-        self.meta_data = gdal.Open(f'{ncfile}').GetMetadata_Dict()
+        """Load data from netCDF file
+        """
+        with netCDF4.Dataset(ncfile, 'r') as f:
+            variables = f.groups['PRODUCT'].variables
+            self.data = variables['carbonmonoxide_total_column'][:][0]
+            self.longitude = variables['longitude'][:][0]
+            self.latitude = variables['latitude'][:][0]
+            self.quality = variables['qa_value'][:][0]
+            self.deltatime = variables['delta_time'][:][0]
+            self.meta_data = f.__dict__
 
 
 class Point():
@@ -62,15 +52,14 @@ class Scan():
     def __init__(self, filepath):
         self.filepath = filepath
         self.raw_data = RawData(filepath)
-        self.time_reference = dateutil.parser.parse(
-            self.raw_data.meta_data.get('NC_GLOBAL#time_reference') or
-            self.raw_data.meta_data['time_reference'])
+        self.time_reference = datetime.utcfromtimestamp(
+            self.raw_data.meta_data['time_reference_seconds_since_1970'])
         self.points = []
         shape = self.raw_data.data.shape
         for i in range(shape[0]):
             for j in range(shape[1]):
-                timestamp = self.time_reference + relativedelta(
-                    microseconds=1e3*self.raw_data.deltatime[0, i])
+                timestamp = self.time_reference + timedelta(
+                        milliseconds=int(self.raw_data.deltatime[i]))
                 self.points.append(Point(
                     longitude=float(self.raw_data.longitude[i, j]),
                     latitude=float(self.raw_data.latitude[i, j]),

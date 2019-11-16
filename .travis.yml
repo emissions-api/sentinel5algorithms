@@ -1,0 +1,17 @@
+language: python
+
+dist: bionic
+
+# https://devguide.python.org/#branchstatus
+python:
+  - 3.6
+  - 3.7
+  - 3.8
+
+install:
+  - pip install -r requirements.txt
+  - pip install flake8 sphinx sphinx-rtd-theme
+script:
+  - flake8 s5a
+  - python -c 'import s5a; s=s5a.Scan(".testdata/test.nc"); exit(s.len() - 430)'
+  - make -C docs clean html

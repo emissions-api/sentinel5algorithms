@@ -1,6 +1,9 @@
 Sentinel-5 Algorithms
 =====================
 
+.. image:: https://travis-ci.com/emissions-api/sentinel5algorithms.svg?branch=master
+    :target: https://travis-ci.com/emissions-api/sentinel5algorithms
+    :alt: Travis CI build status
 .. image:: https://img.shields.io/github/issues-raw/emissions-api/sentinel5algorithms?color=blue
     :target: https://github.com/emissions-api/sentinel5algorithms/issues
     :alt: GitHub issues

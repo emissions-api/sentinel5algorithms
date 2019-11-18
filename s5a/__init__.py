@@ -100,3 +100,14 @@ def filter_by_quality(dataframe, minimal_quality=0.5):
     """
     has_quality = dataframe.quality >= minimal_quality
     return dataframe[has_quality]
+
+
+class H3():
+    """Object to hold in H3 grid converted data from Scan.
+    """
+    def __init__(self, Scan, resolution):
+        h3_indices = [[0 for longitude in range(Scan.points[x].longitude)] for longitude in range(Scan.points[x].longitude)] 
+        #
+        for points in Scan.points[]
+            h3_indices[points][0] = h3.geo_to_h3(Scan.points[points].longitude, Scan.points[points].latitude, resolution)
+            h3_indices[points][1] = Scan.points[points].value

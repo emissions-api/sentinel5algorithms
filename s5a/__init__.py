@@ -107,11 +107,13 @@ class H3():
     """Object to hold in H3 grid converted data from Scan.
     """
     def __init__(self, scan_object, resolution):
+        print('start H3')
         self.scan = scan_object
         self.h3_indices = [[0 for _ in self.scan.points] for _ in self.scan.points]
-        self.indexed = h3.geo_to_h3(self.scan.points[0].longitude, self.scan.points[0].latitude, resolution)
-        for points in self.scan.points:
-            self.h3_indices[points][0] = h3.geo_to_h3(self.scan.points[points].longitude, self.scan.points[points].latitude, resolution)
-            print('h3_indices[', points, '][0]: ', self.h3_indices[points][0])
-            self.h3_indices[points][1] = self.scan.points[points].value
-            print('h3_indices[', points, '][1]: ', self.h3_indices[points][1])
+
+        for point in range(len(self.scan.points)):
+            # if self.scan.points[point].value is not nan
+            self.h3_indices[point][0] = h3.geo_to_h3(self.scan.points[point].longitude, self.scan.points[point].latitude, resolution)
+            print('h3_indices[', point, '][0]: ', self.h3_indices[point][0])
+            self.h3_indices[point][1] = self.scan.points[point].value
+            print('h3_indices[', point, '][1]: ', self.h3_indices[point][1])

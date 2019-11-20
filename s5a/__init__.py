@@ -10,6 +10,9 @@ import netCDF4
 import numpy
 import pandas
 from h3 import h3
+import itertools
+import statistics
+import numpy
 
 # Logger
 logger = logging.getLogger(__name__)
@@ -107,13 +110,55 @@ class H3():
     """Object to hold in H3 grid converted data from Scan.
     """
     def __init__(self, scan_object, resolution):
-        print('start H3')
         self.scan = scan_object
-        self.h3_indices = [[0 for _ in self.scan.points] for _ in self.scan.points]
 
-        for point in range(len(self.scan.points)):
-            # if self.scan.points[point].value is not nan
-            self.h3_indices[point][0] = h3.geo_to_h3(self.scan.points[point].longitude, self.scan.points[point].latitude, resolution)
-            print('h3_indices[', point, '][0]: ', self.h3_indices[point][0])
-            self.h3_indices[point][1] = self.scan.points[point].value
-            print('h3_indices[', point, '][1]: ', self.h3_indices[point][1])
+        self.h3_indices = []
+
+        # go through all points in scan
+        for point in self.scan.points:
+
+            # skip point if value is nan
+            if not numpy.isnan(point.value):
+
+                # convert points (coordinates) into h3 grid (hexagon index)
+                self.h3_indices.append(
+                    [h3.geo_to_h3(point.longitude, point.latitude, resolution), point.value] 
+                )
+        
+        # TODO: delete
+        for index in range(len(self.h3_indices)):
+            print('h3_indices[', index, '][0]: ', self.h3_indices[index][0])
+            print('h3_indices[', index, '][1]: ', self.h3_indices[index][1])
+
+        # set first element of the list as grouping key
+        def extract_key(v):
+            return v[0]
+
+        # itertools.groupby needs data to be sorted first
+        self.h3_indices = sorted(self.h3_indices, key=extract_key)
+
+        # group all values of identical indices in seperate groups
+        self.h3_grouped = [
+            [key,[x[1] for x in group]]
+            for key, group in itertools.groupby(self.h3_indices, extract_key)
+        ]
+
+        # go through all grouped h3 index values of each group
+        for row in range(len(self.h3_grouped)):
+            for value in range(len(self.h3_grouped[row])):
+
+                # TODO: delete
+                print('h3_grouped[', row, '][', value, ']: ', self.h3_grouped[row][value])
+
+            # overwrite first value of each group with the median value of the group
+            self.h3_grouped[row][1] = statistics.median(self.h3_grouped[row][1])
+
+            # TODO: delete
+            print('median: ', self.h3_grouped[row][1])
+
+        # TODO: delete
+        for row in range(len(self.h3_grouped)):
+            for value in range(len(self.h3_grouped[row])):
+                print('median_list[', row, '][', value, ']: ', self.h3_grouped[row][value])
+
+    # TODO: def display_on_map(self)

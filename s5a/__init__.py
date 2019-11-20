@@ -5,11 +5,11 @@
 """Preprocess the locally stored data and store them in the database.
 """
 import logging
-
 import geopandas
 import netCDF4
 import numpy
 import pandas
+from h3 import h3
 
 # Logger
 logger = logging.getLogger(__name__)
@@ -102,12 +102,16 @@ def filter_by_quality(dataframe, minimal_quality=0.5):
     return dataframe[has_quality]
 
 
+
 class H3():
     """Object to hold in H3 grid converted data from Scan.
     """
-    def __init__(self, Scan, resolution):
-        h3_indices = [[0 for longitude in range(Scan.points[x].longitude)] for longitude in range(Scan.points[x].longitude)] 
-        #
-        for points in Scan.points[]
-            h3_indices[points][0] = h3.geo_to_h3(Scan.points[points].longitude, Scan.points[points].latitude, resolution)
-            h3_indices[points][1] = Scan.points[points].value
+    def __init__(self, scan_object, resolution):
+        self.scan = scan_object
+        self.h3_indices = [[0 for _ in self.scan.points] for _ in self.scan.points]
+        self.indexed = h3.geo_to_h3(self.scan.points[0].longitude, self.scan.points[0].latitude, resolution)
+        for points in self.scan.points:
+            self.h3_indices[points][0] = h3.geo_to_h3(self.scan.points[points].longitude, self.scan.points[points].latitude, resolution)
+            print('h3_indices[', points, '][0]: ', self.h3_indices[points][0])
+            self.h3_indices[points][1] = self.scan.points[points].value
+            print('h3_indices[', points, '][1]: ', self.h3_indices[points][1])

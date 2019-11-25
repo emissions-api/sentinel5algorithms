@@ -6,6 +6,7 @@
 """
 import logging
 
+import geopandas
 import netCDF4
 import numpy
 import pandas
@@ -33,6 +34,32 @@ def load_ncfile(ncfile):
         quality = variables['qa_value'][:][0]
         deltatime = variables['delta_time'][:][0]
         meta_data = f.__dict__
+
+    # get some metadata
+    # use mask from MaskedArray to filter values
+    mask = numpy.logical_not(data.mask)
+    n_lines = data.shape[0]  # number of scan lines
+    pixel_per_line = data.shape[1]  # number of pixels per line
+    time_reference = meta_data['time_reference_seconds_since_1970']
+
+    # convert deltatime to timestamps
+    deltatime_arr = numpy.repeat(
+        deltatime, pixel_per_line).reshape(n_lines, -1)
+    deltatime_arr = deltatime_arr[mask]  # filter for missing data
+    # add (milli-)seconds since 1970
+    deltatime_arr = numpy.add(deltatime_arr, time_reference * 1000)
+    timestamps = pandas.to_datetime(deltatime_arr, utc=True, unit='ms')
+
+    # convert data to geodataframe
+    return geopandas.GeoDataFrame({
+        'timestamp': timestamps,
+        'quality': quality[mask],
+        'data': data[mask]
+    },
+        geometry=geopandas.points_from_xy(
+            longitude[mask],
+            latitude[mask])
+    )
 
     # get some metadata
     # use mask from MaskedArray to filter values

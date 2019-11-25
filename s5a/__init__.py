@@ -16,6 +16,14 @@ logger = logging.getLogger(__name__)
 
 
 def load_ncfile(ncfile):
+    """Load a ncfile into a geopandas dataframe
+
+    :param ncfile: path of the file to be read
+    :type ncfile: string
+    :return: a geopandas geodataframe containing
+        the groundpixel information as points
+    :rtype: geopandas.GeoDataFrame
+    """
 
     # read in data
     with netCDF4.Dataset(ncfile, 'r') as f:
@@ -57,6 +65,7 @@ def load_ncfile(ncfile):
 class Scan():
     """Object to hold arrays from an nc file.
     """
+
     def __init__(self, filepath):
         self.filepath = filepath
         self.data = load_ncfile(filepath)
@@ -64,8 +73,9 @@ class Scan():
     def filter_by_quality(self, minimal_quality):
         """Filter points of the Scan by quality.
 
-        :param minimal_quality: Minimal allowed quality
-        :type minimal_quality: int
+        :param minimal_quality: Minimal allowed quality,
+            has to be in the range of 0.0 - 1.0
+        :type minimal_quality: float
         """
         has_quality = self.data.quality >= minimal_quality
         self.data = self.data[has_quality]
@@ -73,7 +83,7 @@ class Scan():
     def len(self):
         """Get number of points in Scan.
 
-        :return: Number of points
+        :return: Number of data points
         :rtype: int
         """
         return self.data.shape[0]

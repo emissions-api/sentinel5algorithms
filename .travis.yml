@@ -12,6 +12,7 @@ install:
   - pip install flake8 sphinx sphinx-rtd-theme
 script:
   - flake8 s5a
+  - python -c 'import s5a; s=s5a.load_ncfile(".testdata/test.nc"); exit(s.shape[0] - 226)'
   - make -C docs clean html
   - |
     python -c '

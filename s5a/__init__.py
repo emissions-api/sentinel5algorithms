@@ -62,28 +62,16 @@ def load_ncfile(ncfile):
     )
 
 
-class Scan():
-    """Object to hold arrays from an nc file.
+def filter_data(dataframe, minimal_quality=0.7):
+    """Filter points of the Scan by quality.
+
+    :param dataframe: a dataframe as returned from load_ncfile()
+    :type dataframe: geopandas.GeoDataFrame
+    :param minimal_quality: Minimal allowed quality,
+        has to be in the range of 0.0 - 1.0
+    :type minimal_quality: float
+    :return: the dataframe filtered by the specified value
+    :rtype: geopandas.GeoDataFrame
     """
-
-    def __init__(self, filepath):
-        self.filepath = filepath
-        self.data = load_ncfile(filepath)
-
-    def filter_by_quality(self, minimal_quality):
-        """Filter points of the Scan by quality.
-
-        :param minimal_quality: Minimal allowed quality,
-            has to be in the range of 0.0 - 1.0
-        :type minimal_quality: float
-        """
-        has_quality = self.data.quality >= minimal_quality
-        self.data = self.data[has_quality]
-
-    def len(self):
-        """Get number of points in Scan.
-
-        :return: Number of data points
-        :rtype: int
-        """
-        return self.data.shape[0]
+    has_quality = dataframe.quality >= minimal_quality
+    return dataframe[has_quality]

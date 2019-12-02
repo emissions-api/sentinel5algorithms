@@ -55,7 +55,7 @@ def load_ncfile(ncfile):
             'timestamp': timestamps,
             'quality': quality[mask],
             'value': data[mask]
-        },geometry=geopandas.points_from_xy(
+        }, geometry=geopandas.points_from_xy(
             longitude[mask],
             latitude[mask])
         )

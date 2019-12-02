@@ -52,4 +52,4 @@ html_theme = 'sphinx_rtd_theme'
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = []
 
-autodoc_mock_imports = ["netCDF4", "numpy"]
+autodoc_mock_imports = ["netCDF4", "numpy", "pandas"]

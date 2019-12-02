@@ -7,79 +7,69 @@
 import logging
 
 import netCDF4
-from datetime import timedelta, datetime
+import numpy
+import pandas
 
 # Logger
 logger = logging.getLogger(__name__)
 
 
-class RawData():
-    """Object to hold the raw data from the nc file.
+def load_ncfile(ncfile):
+    """Load a ncfile into a pandas dataframe
+
+    :param ncfile: path of the file to be read
+    :type ncfile: string
+    :return: a pandas dataframe containing
+        the groundpixel information as points
+    :rtype: pandas.DataFrame
     """
 
-    def __init__(self, ncfile):
-        """Load data from netCDF file
-        """
-        with netCDF4.Dataset(ncfile, 'r') as f:
-            variables = f.groups['PRODUCT'].variables
-            self.data = variables['carbonmonoxide_total_column'][:][0]
-            self.longitude = variables['longitude'][:][0]
-            self.latitude = variables['latitude'][:][0]
-            self.quality = variables['qa_value'][:][0]
-            self.deltatime = variables['delta_time'][:][0]
-            self.meta_data = f.__dict__
+    # read in data
+    with netCDF4.Dataset(ncfile, 'r') as f:
+        variables = f.groups['PRODUCT'].variables
+        data = variables['carbonmonoxide_total_column'][:][0]
+        longitude = variables['longitude'][:][0]
+        latitude = variables['latitude'][:][0]
+        quality = variables['qa_value'][:][0]
+        deltatime = variables['delta_time'][:][0]
+        meta_data = f.__dict__
+
+    # get some metadata
+    # use mask from MaskedArray to filter values
+    mask = numpy.logical_not(data.mask)
+    n_lines = data.shape[0]  # number of scan lines
+    pixel_per_line = data.shape[1]  # number of pixels per line
+    time_reference = meta_data['time_reference_seconds_since_1970']
+
+    # convert deltatime to timestamps
+    # add (milli-)seconds since 1970
+    deltatime = numpy.add(deltatime, time_reference * 1000)
+    deltatime_arr = numpy.repeat(
+        deltatime, pixel_per_line).reshape(n_lines, -1)
+    deltatime_arr = deltatime_arr[mask]  # filter for missing data
+    timestamps = pandas.to_datetime(deltatime_arr, utc=True, unit='ms')
+
+    # convert data to geodataframe
+    return pandas.DataFrame({
+            'timestamp': timestamps,
+            'quality': quality[mask],
+            'value': data[mask],
+            'longitude': longitude[mask],
+            'latitude': latitude[mask]
+        })
 
 
-class Point():
-    """Represents a single point with data from the Satellite"""
-    def __init__(self, longitude, latitude, value, timestamp, quality):
-        self.longitude = longitude
-        self.latitude = latitude
-        self.value = value
-        self.timestamp = timestamp
-        self.quality = quality
+def filter_by_quality(dataframe, minimal_quality=0.5):
+    """Filter points by quality.
 
-    def __repr__(self):
-        return (
-            f'longitude={self.longitude} latitude={self.latitude} '
-            f'value={self.value} timestamp={self.timestamp} '
-            f'quality={self.quality}')
-
-
-class Scan():
-    """Object to hold arrays from an nc file.
+    :param dataframe: a dataframe as returned from load_ncfile()
+    :type dataframe: pandas.DataFrame
+    :param minimal_quality: Minimal allowed quality,
+        has to be in the range of 0.0 - 1.0 and defaults to
+        0.5 as suggested by the ESA product manual
+    :type minimal_quality: float
+    :return: the dataframe filtered by the specified value
+    :rtype: pandas.DataFrame
     """
-    def __init__(self, filepath):
-        self.filepath = filepath
-        self.raw_data = RawData(filepath)
-        self.time_reference = datetime.utcfromtimestamp(
-            self.raw_data.meta_data['time_reference_seconds_since_1970'])
-        self.points = []
-        shape = self.raw_data.data.shape
-        for i in range(shape[0]):
-            for j in range(shape[1]):
-                timestamp = self.time_reference + timedelta(
-                        milliseconds=int(self.raw_data.deltatime[i]))
-                self.points.append(Point(
-                    longitude=float(self.raw_data.longitude[i, j]),
-                    latitude=float(self.raw_data.latitude[i, j]),
-                    value=float(self.raw_data.data[i, j]),
-                    quality=float(self.raw_data.quality[i, j]),
-                    timestamp=timestamp,
-                ))
-
-    def filter_by_quality(self, minimal_quality):
-        """Filter points of the Scan by quality.
-
-        :param minimal_quality: Minimal allowed quality
-        :type minimal_quality: int
-        """
-        self.points = [p for p in self.points if p.quality >= minimal_quality]
-
-    def len(self):
-        """Get number of points in Scan.
-
-        :return: Number of points
-        :rtype: int
-        """
-        return len(self.points)
+    has_quality = dataframe.quality >= minimal_quality
+    return dataframe[has_quality]

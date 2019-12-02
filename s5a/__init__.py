@@ -6,7 +6,6 @@
 """
 import logging
 
-import geopandas
 import netCDF4
 import numpy
 import pandas
@@ -16,13 +15,13 @@ logger = logging.getLogger(__name__)
 
 
 def load_ncfile(ncfile):
-    """Load a ncfile into a geopandas dataframe
+    """Load a ncfile into a pandas dataframe
 
     :param ncfile: path of the file to be read
     :type ncfile: string
-    :return: a geopandas geodataframe containing
+    :return: a pandas dataframe containing
         the groundpixel information as points
-    :rtype: geopandas.GeoDataFrame
+    :rtype: pandas.DataFrame
     """
 
     # read in data
@@ -51,27 +50,26 @@ def load_ncfile(ncfile):
     timestamps = pandas.to_datetime(deltatime_arr, utc=True, unit='ms')
 
     # convert data to geodataframe
-    return geopandas.GeoDataFrame({
+    return pandas.DataFrame({
             'timestamp': timestamps,
             'quality': quality[mask],
-            'value': data[mask]
-        }, geometry=geopandas.points_from_xy(
-            longitude[mask],
-            latitude[mask])
-        )
+            'value': data[mask],
+            'longitude': longitude[mask],
+            'latitude': latitude[mask]
+        })
 
 
 def filter_by_quality(dataframe, minimal_quality=0.5):
     """Filter points by quality.
 
     :param dataframe: a dataframe as returned from load_ncfile()
-    :type dataframe: geopandas.GeoDataFrame
+    :type dataframe: pandas.DataFrame
     :param minimal_quality: Minimal allowed quality,
         has to be in the range of 0.0 - 1.0 and defaults to
         0.5 as suggested by the ESA product manual
     :type minimal_quality: float
     :return: the dataframe filtered by the specified value
-    :rtype: geopandas.GeoDataFrame
+    :rtype: pandas.DataFrame
     """
     has_quality = dataframe.quality >= minimal_quality
     return dataframe[has_quality]

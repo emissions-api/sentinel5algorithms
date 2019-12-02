@@ -61,7 +61,7 @@ def load_ncfile(ncfile):
         )
 
 
-def filter_data(dataframe, minimal_quality=0.5):
+def filter_by_quality(dataframe, minimal_quality=0.5):
     """Filter points by quality.
 
     :param dataframe: a dataframe as returned from load_ncfile()

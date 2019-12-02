@@ -105,60 +105,83 @@ def filter_by_quality(dataframe, minimal_quality=0.5):
     return dataframe[has_quality]
 
 
+def point_to_h3(dataframe, resolution=1):
+    """Convert geopanda dataframe into h3 indices.
 
-class H3():
-    """Object to hold in H3 grid converted data from Scan.
+    :param dataframe: a geopanda dataframe as returned from load_ncfile()
+    :type dataframe: geopandas.GeoDataFrame
+    :param resolution: Resolution of the h3 grid
+    :type resolution: uint
+    :return: the dataframe including the h3 indices
+    :rtype: geopandas.GeoDataFrame
     """
-    def __init__(self, scan_object, resolution):
-        self.scan = scan_object
 
-        self.h3_indices = []
+    print('dataframe.geometry: ', dataframe.geometry)
+    print('dataframe.geometry.point: ', dataframe.geometry.point)
 
-        # go through all points in scan
-        for point in self.scan.points:
+    # go through all points in scan
+    for point in dataframe.geometry.point:
 
-            # skip point if value is nan
-            if not numpy.isnan(point.value):
+        # skip point if value is nan
+        if not numpy.isnan(point.value):
 
-                # convert points (coordinates) into h3 grid (hexagon index)
-                self.h3_indices.append(
-                    [h3.geo_to_h3(point.longitude, point.latitude, resolution), point.value] 
-                )
-        
-        # TODO: delete
-        for index in range(len(self.h3_indices)):
-            print('h3_indices[', index, '][0]: ', self.h3_indices[index][0])
-            print('h3_indices[', index, '][1]: ', self.h3_indices[index][1])
+            # convert points (coordinates) into h3 grid (hexagon index)
+            dataframe.append(
+                [h3.geo_to_h3(point.longitude, point.latitude,
+                                resolution), point.value]
+            )
 
-        # set first element of the list as grouping key
-        def extract_key(v):
-            return v[0]
+    # TODO: delete
+    for index in range(len(dataframe)):
+        print('dataframe[', index, '][0]: ', dataframe[index][0])
+        print('dataframe[', index, '][1]: ', dataframe[index][1])
 
-        # itertools.groupby needs data to be sorted first
-        self.h3_indices = sorted(self.h3_indices, key=extract_key)
+    return dataframe
 
-        # group all values of identical indices in seperate groups
-        self.h3_grouped = [
-            [key,[x[1] for x in group]]
-            for key, group in itertools.groupby(self.h3_indices, extract_key)
-        ]
 
-        # go through all grouped h3 index values of each group
-        for row in range(len(self.h3_grouped)):
-            for value in range(len(self.h3_grouped[row])):
+def aggregate_h3(dataframe, function=['median', 'mean']):
+    """Sum up data values of the same h3 index.
 
-                # TODO: delete
-                print('h3_grouped[', row, '][', value, ']: ', self.h3_grouped[row][value])
+    :param dataframe: a geopanda dataframe as returned from load_ncfile()
+    :type dataframe: geopandas.GeoDataFrame
+    :param function: Sum up function of the data values of the same h3 index
+    :type function:
+    :return: the dataframe including the h3 indices
+    :rtype: geopandas.GeoDataFrame
+    """
 
-            # overwrite first value of each group with the median value of the group
-            self.h3_grouped[row][1] = statistics.median(self.h3_grouped[row][1])
+    # set first element of the list as grouping key
+    def extract_key(v):
+        return v[0]
+
+    # itertools.groupby needs data to be sorted first
+    self.h3_indices = sorted(self.h3_indices, key=extract_key)
+
+    # group all values of identical indices in seperate groups
+    self.h3_grouped = [
+        [key, [x[1] for x in group]]
+        for key, group in itertools.groupby(self.h3_indices, extract_key)
+    ]
+
+    # go through all grouped h3 index values of each group
+    for row in range(len(self.h3_grouped)):
+        for value in range(len(self.h3_grouped[row])):
 
             # TODO: delete
-            print('median: ', self.h3_grouped[row][1])
+            print('h3_grouped[', row, '][', value, ']: ',
+                    self.h3_grouped[row][value])
+
+        # overwrite first value of each group with the median value of the group
+        self.h3_grouped[row][1] = statistics.median(
+            self.h3_grouped[row][1])
 
         # TODO: delete
-        for row in range(len(self.h3_grouped)):
-            for value in range(len(self.h3_grouped[row])):
-                print('median_list[', row, '][', value, ']: ', self.h3_grouped[row][value])
+        print('median: ', self.h3_grouped[row][1])
 
-    # TODO: def display_on_map(self)
+    # TODO: delete
+    for row in range(len(self.h3_grouped)):
+        for value in range(len(self.h3_grouped[row])):
+            print('median_list[', row, '][', value, ']: ',
+                    self.h3_grouped[row][value])
+
+    return dataframe

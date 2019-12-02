@@ -43,32 +43,32 @@ def load_ncfile(ncfile):
     time_reference = meta_data['time_reference_seconds_since_1970']
 
     # convert deltatime to timestamps
+    # add (milli-)seconds since 1970
+    deltatime = numpy.add(deltatime, time_reference * 1000)
     deltatime_arr = numpy.repeat(
         deltatime, pixel_per_line).reshape(n_lines, -1)
     deltatime_arr = deltatime_arr[mask]  # filter for missing data
-    # add (milli-)seconds since 1970
-    deltatime_arr = numpy.add(deltatime_arr, time_reference * 1000)
     timestamps = pandas.to_datetime(deltatime_arr, utc=True, unit='ms')
 
     # convert data to geodataframe
     return geopandas.GeoDataFrame({
-        'timestamp': timestamps,
-        'quality': quality[mask],
-        'data': data[mask]
-    },
-        geometry=geopandas.points_from_xy(
+            'timestamp': timestamps,
+            'quality': quality[mask],
+            'value': data[mask]
+        },geometry=geopandas.points_from_xy(
             longitude[mask],
             latitude[mask])
-    )
+        )
 
 
-def filter_data(dataframe, minimal_quality=0.7):
-    """Filter points of the Scan by quality.
+def filter_data(dataframe, minimal_quality=0.5):
+    """Filter points by quality.
 
     :param dataframe: a dataframe as returned from load_ncfile()
     :type dataframe: geopandas.GeoDataFrame
     :param minimal_quality: Minimal allowed quality,
-        has to be in the range of 0.0 - 1.0
+        has to be in the range of 0.0 - 1.0 and defaults to
+        0.5 as suggested by the ESA product manual
     :type minimal_quality: float
     :return: the dataframe filtered by the specified value
     :rtype: geopandas.GeoDataFrame

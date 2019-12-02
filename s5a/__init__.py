@@ -5,7 +5,6 @@
 """Preprocess the locally stored data and store them in the database.
 """
 import logging
-import geopandas
 import netCDF4
 import numpy
 import pandas
@@ -17,10 +16,8 @@ import numpy
 # Logger
 logger = logging.getLogger(__name__)
 
-
 def load_ncfile(ncfile):
     """Load a ncfile into a pandas dataframe
-
     :param ncfile: path of the file to be read
     :type ncfile: string
     :return: a pandas dataframe containing
@@ -37,32 +34,6 @@ def load_ncfile(ncfile):
         quality = variables['qa_value'][:][0]
         deltatime = variables['delta_time'][:][0]
         meta_data = f.__dict__
-
-    # get some metadata
-    # use mask from MaskedArray to filter values
-    mask = numpy.logical_not(data.mask)
-    n_lines = data.shape[0]  # number of scan lines
-    pixel_per_line = data.shape[1]  # number of pixels per line
-    time_reference = meta_data['time_reference_seconds_since_1970']
-
-    # convert deltatime to timestamps
-    deltatime_arr = numpy.repeat(
-        deltatime, pixel_per_line).reshape(n_lines, -1)
-    deltatime_arr = deltatime_arr[mask]  # filter for missing data
-    # add (milli-)seconds since 1970
-    deltatime_arr = numpy.add(deltatime_arr, time_reference * 1000)
-    timestamps = pandas.to_datetime(deltatime_arr, utc=True, unit='ms')
-
-    # convert data to geodataframe
-    return geopandas.GeoDataFrame({
-        'timestamp': timestamps,
-        'quality': quality[mask],
-        'data': data[mask]
-    },
-        geometry=geopandas.points_from_xy(
-            longitude[mask],
-            latitude[mask])
-    )
 
     # get some metadata
     # use mask from MaskedArray to filter values
@@ -106,14 +77,14 @@ def filter_by_quality(dataframe, minimal_quality=0.5):
 
 
 def point_to_h3(dataframe, resolution=1):
-    """Convert geopanda dataframe into h3 indices.
+    """Convert pandas dataframe into h3 indices.
 
-    :param dataframe: a geopanda dataframe as returned from load_ncfile()
-    :type dataframe: geopandas.GeoDataFrame
+    :param dataframe: a pandas dataframe as returned from load_ncfile()
+    :type dataframe: pandas.GeoDataFrame
     :param resolution: Resolution of the h3 grid
     :type resolution: uint
     :return: the dataframe including the h3 indices
-    :rtype: geopandas.GeoDataFrame
+    :rtype: pandas.GeoDataFrame
     """
 
     print('dataframe.geometry: ', dataframe.geometry)
@@ -140,14 +111,14 @@ def point_to_h3(dataframe, resolution=1):
 
 
 def aggregate_h3(dataframe, function=['median', 'mean']):
-    """Sum up data values of the same h3 index.
+    """Sum up data values of the same h3 index in dataframe.
 
     :param dataframe: a geopanda dataframe as returned from load_ncfile()
-    :type dataframe: geopandas.GeoDataFrame
+    :type dataframe: pandas.GeoDataFrame
     :param function: Sum up function of the data values of the same h3 index
     :type function:
     :return: the dataframe including the h3 indices
-    :rtype: geopandas.GeoDataFrame
+    :rtype: pandas.GeoDataFrame
     """
 
     # set first element of the list as grouping key

@@ -87,25 +87,28 @@ def point_to_h3(dataframe, resolution=1):
     :rtype: pandas.GeoDataFrame
     """
 
-    print('dataframe.geometry: ', dataframe.geometry)
-    print('dataframe.geometry.point: ', dataframe.geometry.point)
+    h3_series = []
 
     # go through all points in scan
-    for point in dataframe.geometry.point:
+    for point in range(len(dataframe)):
+
+        print("point#: ", point)
 
         # skip point if value is nan
-        if not numpy.isnan(point.value):
+        if not numpy.isnan(dataframe.value[point]):
 
             # convert points (coordinates) into h3 grid (hexagon index)
-            dataframe.append(
-                [h3.geo_to_h3(point.longitude, point.latitude,
-                                resolution), point.value]
-            )
+            h3_index = h3.geo_to_h3(dataframe.longitude[point], dataframe.latitude[point], resolution)
 
-    # TODO: delete
-    for index in range(len(dataframe)):
-        print('dataframe[', index, '][0]: ', dataframe[index][0])
-        print('dataframe[', index, '][1]: ', dataframe[index][1])
+            print("h3_index: ", h3_index)
+
+            h3_series.append(h3_index)
+
+    print("h3_series: ", h3_series)
+
+    dataframe['h3'] = h3_series
+
+    print("merged_dataframe: ", dataframe)
 
     return dataframe
 

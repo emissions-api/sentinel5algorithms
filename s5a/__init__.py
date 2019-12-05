@@ -13,6 +13,7 @@ import itertools
 import statistics
 import numpy
 
+
 # Logger
 logger = logging.getLogger(__name__)
 
@@ -87,12 +88,11 @@ def point_to_h3(dataframe, resolution=1):
     :rtype: pandas.GeoDataFrame
     """
 
+    # new list
     h3_series = []
 
     # go through all points in scan
     for point in range(len(dataframe)):
-
-        print("point#: ", point)
 
         # skip point if value is nan
         if not numpy.isnan(dataframe.value[point]):
@@ -100,15 +100,11 @@ def point_to_h3(dataframe, resolution=1):
             # convert points (coordinates) into h3 grid (hexagon index)
             h3_index = h3.geo_to_h3(dataframe.longitude[point], dataframe.latitude[point], resolution)
 
-            print("h3_index: ", h3_index)
-
+            # append new h3 index to list
             h3_series.append(h3_index)
 
-    print("h3_series: ", h3_series)
-
+    # append h3 series as column to dataframe
     dataframe['h3'] = h3_series
-
-    print("merged_dataframe: ", dataframe)
 
     return dataframe
 
@@ -124,38 +120,20 @@ def aggregate_h3(dataframe, function=['median', 'mean']):
     :rtype: pandas.GeoDataFrame
     """
 
-    # set first element of the list as grouping key
-    def extract_key(v):
-        return v[0]
+    # remove columns
+    dataframe.drop(['timestamp', 'quality', 'longitude', 'latitude'], axis=1, inplace=True)
 
-    # itertools.groupby needs data to be sorted first
-    self.h3_indices = sorted(self.h3_indices, key=extract_key)
+    if function == 'median':
+        print("median")
+        # aggregate same indices and median their values
+        result = dataframe.groupby(['h3']).median()
+    elif function == 'mean':
+        print("mean")
+        # aggregate same indices and mean their values
+        result = dataframe.groupby(['h3']).mean()
+    else:
+        print("nothing")
+        # aggregate same indices
+        result = dataframe.groupby(['h3'])
 
-    # group all values of identical indices in seperate groups
-    self.h3_grouped = [
-        [key, [x[1] for x in group]]
-        for key, group in itertools.groupby(self.h3_indices, extract_key)
-    ]
-
-    # go through all grouped h3 index values of each group
-    for row in range(len(self.h3_grouped)):
-        for value in range(len(self.h3_grouped[row])):
-
-            # TODO: delete
-            print('h3_grouped[', row, '][', value, ']: ',
-                    self.h3_grouped[row][value])
-
-        # overwrite first value of each group with the median value of the group
-        self.h3_grouped[row][1] = statistics.median(
-            self.h3_grouped[row][1])
-
-        # TODO: delete
-        print('median: ', self.h3_grouped[row][1])
-
-    # TODO: delete
-    for row in range(len(self.h3_grouped)):
-        for value in range(len(self.h3_grouped[row])):
-            print('median_list[', row, '][', value, ']: ',
-                    self.h3_grouped[row][value])
-
-    return dataframe
+    return result

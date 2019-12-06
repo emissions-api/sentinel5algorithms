@@ -17,6 +17,7 @@ import numpy
 # Logger
 logger = logging.getLogger(__name__)
 
+
 def load_ncfile(ncfile):
     """Load a ncfile into a pandas dataframe
     :param ncfile: path of the file to be read
@@ -53,12 +54,12 @@ def load_ncfile(ncfile):
 
     # convert data to geodataframe
     return pandas.DataFrame({
-            'timestamp': timestamps,
-            'quality': quality[mask],
-            'value': data[mask],
-            'longitude': longitude[mask],
-            'latitude': latitude[mask]
-        })
+        'timestamp': timestamps,
+        'quality': quality[mask],
+        'value': data[mask],
+        'longitude': longitude[mask],
+        'latitude': latitude[mask]
+    })
 
 
 def filter_by_quality(dataframe, minimal_quality=0.5):
@@ -78,14 +79,14 @@ def filter_by_quality(dataframe, minimal_quality=0.5):
 
 
 def point_to_h3(dataframe, resolution=1):
-    """Convert pandas dataframe into h3 indices.
+    """Convert longitude and latidute in pandas dataframe into h3 indices and add them as additional column.
 
     :param dataframe: a pandas dataframe as returned from load_ncfile()
-    :type dataframe: pandas.GeoDataFrame
+    :type dataframe: pandas.DataFrame
     :param resolution: Resolution of the h3 grid
     :type resolution: uint
     :return: the dataframe including the h3 indices
-    :rtype: pandas.GeoDataFrame
+    :rtype: pandas.DataFrame
     """
 
     # new list
@@ -98,7 +99,8 @@ def point_to_h3(dataframe, resolution=1):
         if not numpy.isnan(dataframe.value[point]):
 
             # convert points (coordinates) into h3 grid (hexagon index)
-            h3_index = h3.geo_to_h3(dataframe.longitude[point], dataframe.latitude[point], resolution)
+            h3_index = h3.geo_to_h3(
+                dataframe.longitude[point], dataframe.latitude[point], resolution)
 
             # append new h3 index to list
             h3_series.append(h3_index)
@@ -110,30 +112,21 @@ def point_to_h3(dataframe, resolution=1):
 
 
 def aggregate_h3(dataframe, function=['median', 'mean']):
-    """Sum up data values of the same h3 index in dataframe.
+    """Aggregate data values of the same h3 index in dataframe.
 
-    :param dataframe: a geopanda dataframe as returned from load_ncfile()
-    :type dataframe: pandas.GeoDataFrame
-    :param function: Sum up function of the data values of the same h3 index
+    :param dataframe: a pandas dataframe as returned from load_ncfile()
+    :type dataframe: pandas.DataFrame
+    :param function: Aggregation function of the data values of the same h3 index
     :type function:
-    :return: the dataframe including the h3 indices
-    :rtype: pandas.GeoDataFrame
+    :return: new dataframe with the aggregated values
+    :rtype: pandas.DataFrame
     """
 
-    # remove columns
-    dataframe.drop(['timestamp', 'quality', 'longitude', 'latitude'], axis=1, inplace=True)
-
     if function == 'median':
-        print("median")
         # aggregate same indices and median their values
-        result = dataframe.groupby(['h3']).median()
+        return dataframe.groupby(['h3']).agg({'timestamp':'min', 'quality':'min', 'value':'median'})
     elif function == 'mean':
-        print("mean")
         # aggregate same indices and mean their values
-        result = dataframe.groupby(['h3']).mean()
+        return dataframe.groupby(['h3']).agg({'timestamp':'min', 'quality':'min', 'value':'mean'})
     else:
-        print("nothing")
-        # aggregate same indices
-        result = dataframe.groupby(['h3'])
-
-    return result
+        raise ValueError("invalid parameter for function")

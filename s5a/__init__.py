@@ -9,9 +9,6 @@ import netCDF4
 import numpy
 import pandas
 from h3 import h3
-import itertools
-import statistics
-import numpy
 
 
 # Logger
@@ -79,7 +76,8 @@ def filter_by_quality(dataframe, minimal_quality=0.5):
 
 
 def point_to_h3(dataframe, resolution=1):
-    """Convert longitude and latidute in pandas dataframe into h3 indices and add them as additional column.
+    """Convert longitude and latidute in pandas dataframe into h3 indices and
+    add them as additional column.
 
     :param dataframe: a pandas dataframe as returned from load_ncfile()
     :type dataframe: pandas.DataFrame
@@ -100,7 +98,9 @@ def point_to_h3(dataframe, resolution=1):
 
             # convert points (coordinates) into h3 grid (hexagon index)
             h3_index = h3.geo_to_h3(
-                dataframe.longitude[point], dataframe.latitude[point], resolution)
+                dataframe.longitude[point],
+                dataframe.latitude[point],
+                resolution)
 
             # append new h3 index to list
             h3_series.append(h3_index)
@@ -116,7 +116,8 @@ def aggregate_h3(dataframe, function=['median', 'mean']):
 
     :param dataframe: a pandas dataframe as returned from load_ncfile()
     :type dataframe: pandas.DataFrame
-    :param function: Aggregation function of the data values of the same h3 index
+    :param function: Aggregation function of
+    the data values of the same h3 index
     :type function:
     :return: new dataframe with the aggregated values
     :rtype: pandas.DataFrame
@@ -124,9 +125,13 @@ def aggregate_h3(dataframe, function=['median', 'mean']):
 
     if function == 'median':
         # aggregate same indices and median their values
-        return dataframe.groupby(['h3']).agg({'timestamp':'min', 'quality':'min', 'value':'median'})
+        return dataframe.groupby(['h3']).agg({'timestamp': 'min',
+                                              'quality': 'min',
+                                              'value': 'median'})
     elif function == 'mean':
         # aggregate same indices and mean their values
-        return dataframe.groupby(['h3']).agg({'timestamp':'min', 'quality':'min', 'value':'mean'})
+        return dataframe.groupby(['h3']).agg({'timestamp': 'min',
+                                              'quality': 'min',
+                                              'value': 'mean'})
     else:
         raise ValueError("invalid parameter for function")

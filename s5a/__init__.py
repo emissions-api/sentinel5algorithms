@@ -17,11 +17,12 @@ logger = logging.getLogger(__name__)
 
 def load_ncfile(ncfile):
     """Load a ncfile into a pandas dataframe
+
     :param ncfile: path of the file to be read
     :type ncfile: string
     :return: a pandas dataframe containing
         the groundpixel information as points
-    :rtype: pandas.DataFrame
+    :rtype: pandas.core.frame.DataFrame
     """
 
     # read in data
@@ -63,13 +64,13 @@ def filter_by_quality(dataframe, minimal_quality=0.5):
     """Filter points by quality.
 
     :param dataframe: a dataframe as returned from load_ncfile()
-    :type dataframe: pandas.DataFrame
+    :type dataframe: pandas.core.frame.DataFrame
     :param minimal_quality: Minimal allowed quality,
         has to be in the range of 0.0 - 1.0 and defaults to
         0.5 as suggested by the ESA product manual
     :type minimal_quality: float
     :return: the dataframe filtered by the specified value
-    :rtype: pandas.DataFrame
+    :rtype: pandas.core.frame.DataFrame
     """
     has_quality = dataframe.quality >= minimal_quality
     return dataframe[has_quality]
@@ -80,11 +81,11 @@ def point_to_h3(dataframe, resolution=1):
     add them as additional column.
 
     :param dataframe: a pandas dataframe as returned from load_ncfile()
-    :type dataframe: pandas.DataFrame
+    :type dataframe: pandas.core.frame.DataFrame
     :param resolution: Resolution of the h3 grid
     :type resolution: uint
     :return: the dataframe including the h3 indices
-    :rtype: pandas.DataFrame
+    :rtype: pandas.core.frame.DataFrame
     """
 
     # new list
@@ -111,16 +112,16 @@ def point_to_h3(dataframe, resolution=1):
     return dataframe
 
 
-def aggregate_h3(dataframe, function=['median', 'mean']):
+def aggregate_h3(dataframe, function='mean'):
     """Aggregate data values of the same h3 index in dataframe.
 
     :param dataframe: a pandas dataframe as returned from load_ncfile()
-    :type dataframe: pandas.DataFrame
+    :type dataframe: pandas.core.frame.DataFrame
     :param function: Aggregation function of
-    the data values of the same h3 index
-    :type function:
+        the data values of the same h3 index
+    :type function: str
     :return: new dataframe with the aggregated values
-    :rtype: pandas.DataFrame
+    :rtype: pandas.core.frame.DataFrame
     """
 
     if function == 'median':
@@ -135,3 +136,4 @@ def aggregate_h3(dataframe, function=['median', 'mean']):
                                               'value': 'mean'})
     else:
         raise ValueError("invalid parameter for function")
+        return dataframe

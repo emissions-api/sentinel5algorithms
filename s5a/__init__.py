@@ -91,8 +91,8 @@ def point_to_h3(dataframe, resolution=1):
     # create a new column 'h3' and fill it row-wise with
     # the converted longitudes and latitudes
     dataframe['h3'] = [h3.geo_to_h3(lon, lat, resolution)
-                     for lon, lat in
-                     zip(dataframe['longitude'], dataframe['latitude'])]
+                       for lon, lat in
+                       zip(dataframe['longitude'], dataframe['latitude'])]
 
     return dataframe
 

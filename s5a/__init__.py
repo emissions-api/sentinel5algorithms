@@ -5,10 +5,11 @@
 """Preprocess the locally stored data and store them in the database.
 """
 import logging
-
 import netCDF4
 import numpy
 import pandas
+from h3 import h3
+
 
 # Logger
 logger = logging.getLogger(__name__)
@@ -21,7 +22,7 @@ def load_ncfile(ncfile):
     :type ncfile: string
     :return: a pandas dataframe containing
         the groundpixel information as points
-    :rtype: pandas.DataFrame
+    :rtype: pandas.core.frame.DataFrame
     """
 
     # read in data
@@ -63,13 +64,55 @@ def filter_by_quality(dataframe, minimal_quality=0.5):
     """Filter points by quality.
 
     :param dataframe: a dataframe as returned from load_ncfile()
-    :type dataframe: pandas.DataFrame
+    :type dataframe: pandas.core.frame.DataFrame
     :param minimal_quality: Minimal allowed quality,
         has to be in the range of 0.0 - 1.0 and defaults to
         0.5 as suggested by the ESA product manual
     :type minimal_quality: float
     :return: the dataframe filtered by the specified value
-    :rtype: pandas.DataFrame
+    :rtype: pandas.core.frame.DataFrame
     """
     has_quality = dataframe.quality >= minimal_quality
     return dataframe[has_quality]
+
+
+def point_to_h3(dataframe, resolution=1):
+    """Convert longitude and latitude in pandas dataframe into h3 indices and
+    add them as additional column.
+
+    :param dataframe: a pandas dataframe as returned from load_ncfile()
+    :type dataframe: pandas.core.frame.DataFrame
+    :param resolution: Resolution of the h3 grid
+    :type resolution: uint
+    :return: the dataframe including the h3 indices
+    :rtype: pandas.core.frame.DataFrame
+    """
+
+    # create a new column 'h3' and fill it row-wise with
+    # the converted longitudes and latitudes
+    dataframe['h3'] = [h3.geo_to_h3(lon, lat, resolution)
+                       for lon, lat in
+                       zip(dataframe['longitude'], dataframe['latitude'])]
+
+    return dataframe
+
+
+def aggregate_h3(dataframe, function='mean'):
+    """Aggregate data values of the same h3 index in dataframe.
+
+    :param dataframe: a pandas dataframe as returned from load_ncfile()
+    :type dataframe: pandas.core.frame.DataFrame
+    :param function: Aggregation function of
+        the data values of the same h3 index
+    :type function: str
+    :return: new dataframe with the aggregated values
+    :rtype: pandas.core.frame.DataFrame
+    """
+
+    if function not in ['median', 'mean']:
+        raise ValueError("invalid parameter for function")
+
+    # aggregate same indices
+    return dataframe.groupby(['h3']).agg({'timestamp': 'min',
+                                          'quality': 'min',
+                                          'value': function})

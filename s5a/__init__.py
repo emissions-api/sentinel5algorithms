@@ -88,23 +88,11 @@ def point_to_h3(dataframe, resolution=1):
     :rtype: pandas.core.frame.DataFrame
     """
 
-    # new list
-    h3_series = []
-
-    # go through all points in scan
-    for point in range(len(dataframe)):
-
-        # convert points (coordinates) into h3 grid (hexagon index)
-        h3_index = h3.geo_to_h3(
-            dataframe.longitude[point],
-            dataframe.latitude[point],
-            resolution)
-
-        # append new h3 index to list
-        h3_series.append(h3_index)
-
-    # append h3 series as column to dataframe
-    dataframe['h3'] = h3_series
+    # create a new column 'h3' and fill it row-wise with
+    # the converted longitudes and latitudes
+    dataframe['h3'] = [h3.geo_to_h3(lon, lat, resolution)
+                     for lon, lat in
+                     zip(dataframe['longitude'], dataframe['latitude'])]
 
     return dataframe
 
@@ -124,7 +112,7 @@ def aggregate_h3(dataframe, function='mean'):
     if function not in ['median', 'mean']:
         raise ValueError("invalid parameter for function")
 
-        # aggregate same indices
-        return dataframe.groupby(['h3']).agg({'timestamp': 'min',
-                                              'quality': 'min',
-                                              'value': function})
+    # aggregate same indices
+    return dataframe.groupby(['h3']).agg({'timestamp': 'min',
+                                          'quality': 'min',
+                                          'value': function})

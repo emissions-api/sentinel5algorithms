@@ -5,6 +5,7 @@
 """Preprocess the locally stored data and store them in the database.
 """
 import logging
+
 import netCDF4
 import numpy
 import pandas
@@ -15,11 +16,14 @@ from h3 import h3
 logger = logging.getLogger(__name__)
 
 
-def load_ncfile(ncfile):
+def load_ncfile(ncfile, data_variable_name=None):
     """Load a ncfile into a pandas dataframe
 
     :param ncfile: path of the file to be read
     :type ncfile: string
+    :data_variable_name: the name of the data variable in the
+        product to load, defaults to None
+    :type data_variable_name: string
     :return: a pandas dataframe containing
         the groundpixel information as points
     :rtype: pandas.core.frame.DataFrame
@@ -28,7 +32,25 @@ def load_ncfile(ncfile):
     # read in data
     with netCDF4.Dataset(ncfile, 'r') as f:
         variables = f.groups['PRODUCT'].variables
-        data = variables['carbonmonoxide_total_column'][:][0]
+
+        # If no data variable name is given, choose the first one
+        # that is available from the following lookup table.
+        variable_names = ('carbonmonoxide_total_column',
+                          'ozone_total_vertical_column',
+                          'sulfurdioxide_total_vertical_column',
+                          'methane_mixing_ratio_bias_corrected',
+                          'formaldehyde_tropospheric_vertical_column',
+                          'nitrogendioxide_tropospheric_column'
+                          )
+
+        if not data_variable_name:
+            variables_keys = variables.keys()
+            for variable_name in variable_names:
+                if variable_name in variables_keys:
+                    data_variable_name = variable_name
+                    break
+
+        data = variables[data_variable_name][:][0]
         longitude = variables['longitude'][:][0]
         latitude = variables['latitude'][:][0]
         quality = variables['qa_value'][:][0]

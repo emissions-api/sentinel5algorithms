@@ -45,10 +45,11 @@ def load_ncfile(ncfile):
     # convert deltatime to timestamps
     # add (milli-)seconds since 1970
     deltatime = numpy.add(deltatime, time_reference * 1000)
-    deltatime_arr = numpy.repeat(
-        deltatime, pixel_per_line).reshape(n_lines, -1)
-    deltatime_arr = deltatime_arr[mask]  # filter for missing data
-    timestamps = pandas.to_datetime(deltatime_arr, utc=True, unit='ms')
+    if len(deltatime.shape) == 1:
+        deltatime = numpy.repeat(
+            deltatime, pixel_per_line).reshape(n_lines, -1)
+    deltatime = deltatime[mask]  # filter for missing data
+    timestamps = pandas.to_datetime(deltatime, utc=True, unit='ms')
 
     # convert data to geodataframe
     return pandas.DataFrame({

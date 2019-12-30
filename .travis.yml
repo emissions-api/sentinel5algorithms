@@ -14,15 +14,4 @@ install:
 script:
   - flake8 s5a
   - make -C docs clean html
-  - |
-    python -c '
-    import s5a
-    s = s5a.load_ncfile(".testdata/test.nc")
-    s.size == 1130 or exit(1)
-    s = s5a.filter_by_quality(s, 0)
-    s.size == 1130 or exit(1)
-    s = s5a.filter_by_quality(s, 0.5)
-    s.size == 900 or exit(1)
-    s = s5a.filter_by_quality(s)
-    s.size == 900 or exit(1)
-    '
+  - python -m unittest --verbose tests

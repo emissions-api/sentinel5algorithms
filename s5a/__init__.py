@@ -109,15 +109,31 @@ def point_to_h3(dataframe, resolution=1):
 
     # create a new column 'h3' and fill it row-wise with
     # the converted longitudes and latitudes
-    dataframe['h3'] = [h3.geo_to_h3(lon, lat, resolution)
-                       for lon, lat in
-                       zip(dataframe['longitude'], dataframe['latitude'])]
+    dataframe['h3'] = [h3.geo_to_h3(lat, lon, resolution)
+                       for lat, lon in
+                       zip(dataframe['latitude'], dataframe['longitude'])]
 
     return dataframe
 
 
+def h3_to_point(dataframe, h3_column='h3'):
+    """Convert H3 index in pandas dataframe into longitude and latitude.
+
+    :param: dataframe: pandas dataframe with a column of H3 indices
+    :type dataframe: pandas.core.frame.DataFrame
+    :param h3_column: column name of the column with the H3 indices,
+                      defaults to h3.
+    :type h3_column: str, optional
+    """
+    lat_lon = numpy.array(
+        [h3.h3_to_geo(h3hexagon) for h3hexagon in dataframe['h3']])
+    dataframe['latitude'] = lat_lon[:, 0]
+    dataframe['longitude'] = lat_lon[:, 1]
+    return dataframe
+
+
 def aggregate_h3(dataframe, function='mean'):
-    """Aggregate data values of the same h3 index in dataframe.
+    """Aggregate data values of the same H3 index in dataframe.
 
     :param dataframe: a pandas dataframe as returned from load_ncfile()
     :type dataframe: pandas.core.frame.DataFrame
@@ -132,6 +148,7 @@ def aggregate_h3(dataframe, function='mean'):
         raise ValueError("invalid parameter for function")
 
     # aggregate same indices
-    return dataframe.groupby(['h3']).agg({'timestamp': 'min',
-                                          'quality': 'min',
-                                          'value': function})
+    return dataframe.groupby(['h3'], as_index=False).agg({
+        'timestamp': 'min',
+        'quality': 'min',
+        'value': function})

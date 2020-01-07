@@ -44,11 +44,7 @@ def load_ncfile(ncfile, data_variable_name=None):
                           )
 
         if not data_variable_name:
-            variables_keys = variables.keys()
-            for variable_name in variable_names:
-                if variable_name in variables_keys:
-                    data_variable_name = variable_name
-                    break
+            data_variable_name = (variables.keys() & variable_names).pop()
 
         data = variables[data_variable_name][:][0]
         longitude = variables['longitude'][:][0]

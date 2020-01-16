@@ -12,7 +12,7 @@ def read(filename):
 
 setup(
     name='s5a',
-    version='0.3',
+    version='0.4',
     description='Sentinel-5 Algorithms',
     author='Emissions API Developers',
     license='MIT',
